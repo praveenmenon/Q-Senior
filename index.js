@@ -139,9 +139,8 @@ function(req, res) {
 }
 );
 
-
- // get meal menu
- app.intent('getMealMenu', {
+// get meal menu
+app.intent('getMealMenu', {
   'slots': {
     "MealMenu": "MealMenuType"
   }
@@ -200,6 +199,7 @@ function(req, res) {
   }
 }
 );
+
 
 // Tag Events
 app.intent('getTagEvents', {
@@ -323,7 +323,6 @@ function(req, res) {
   }
 }
 );
-
 
 // event by title
 app.intent('getTitleEvents', {
@@ -462,22 +461,18 @@ app.intent('AMAZON.YesIntent',
         res.say(prompt).shouldEndSession(false).send();
       });
     }
-  }
-  );
-
+  });
 
 app.intent('AMAZON.HelpIntent',
   function(req, res) {
     var help = "";
     res.say(help).shouldEndSession(false); // Or let the user stop an action (but remain in the skill)
-
   });
 
 app.intent('AMAZON.StopIntent',
   function(req, res) {
     var goodbye = "Had a nice time talking to you. Goodbye.";
     res.say(goodbye).shouldEndSession(true); // Or let the user stop an action (but remain in the skill)
-
   });
 
 function getDate() {
