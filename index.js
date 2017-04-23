@@ -76,14 +76,16 @@ function(req, res) {
 // get meal timings
 app.intent('getMealTimings', {
   'slots': {
-    "MealType": "MealTypeInfo"
+    "MealType": "MealTypeInfo",
+    'Date': 'AMAZON.DATE'
   }
 },
 function(req, res) {
-  var mealTag = req.slot('MealType').toLowerCase();
-  var date = getDate();
+  var mealTag = req.slot('MealType');
+  var date = (req.slot('Date') !== null && req.slot('Date') !== undefined) ? req.slot('Date') : getDate();
   var tag;
   console.log("Meal type:", mealTag);
+  console.log("Date of meal served:", date);
 
   if (mealTag && mealTag !== null && mealTag !== undefined) {
 
@@ -111,24 +113,24 @@ function(req, res) {
         switch (tag) {
           case 'Breakfast':
           console.log("Breakfast time");
-          res.say('Breakfast is served every day at '+results.data[0].start_time+'. Would you like to know what is today\'s breakfast menu?').session('intentName', 'getMealTimings').session('mealType', 'breakfast').session('date', date).shouldEndSession(false);
+          res.say('Breakfast is served at ' + results.data[0].start_time + '. Would you like to know what is the breakfast menu?').session('intentName', 'getMealTimings').session('mealType', 'breakfast').session('date', date).shouldEndSession(false);
           break;
 
           case 'Lunch':
           console.log("Lunch time");
-          res.say('Typically lunch starts around '+results.data[0].start_time+'. Would you like to know what is today\'s lunch menu?').session('intentName', 'getMealTimings').session('mealType', 'lunch').session('date', date).shouldEndSession(false);
+          res.say('Typically lunch starts around ' + results.data[0].start_time + '. Would you like to know what is the lunch menu?').session('intentName', 'getMealTimings').session('mealType', 'lunch').session('date', date).shouldEndSession(false);
           break;
 
           case 'Dinner':
           console.log("Dinner time");
-          res.say('Dinner is served at '+ results.data[0].start_time +'. Would you like to know what is today\'s menu for dinner?').session('intentName', 'getMealTimings').session('mealType', 'dinner').session('date', date).shouldEndSession(false);
+          res.say('Dinner is served at ' + results.data[0].start_time + '. Would you like to know what is the menu for dinner?').session('intentName', 'getMealTimings').session('mealType', 'dinner').session('date', date).shouldEndSession(false);
           break;
 
           default:
           res.say("Sorry, I did not understand the question. Could you please repeat it?").shouldEndSession(false);
         }
       } else {
-        res.say('Currently there are no '+ tag +' scheduled.').shouldEndSession(false).send();
+        res.say('Currently there are no ' + tag + ' scheduled.').shouldEndSession(false).send();
       }
     }).catch(function(error) {
       console.log('❌ prompt during failure:', response);
@@ -142,12 +144,13 @@ function(req, res) {
 // get meal menu
 app.intent('getMealMenu', {
   'slots': {
-    "MealMenu": "MealMenuType"
+    "MealMenu": "MealMenuType",
+    'Date': 'AMAZON.DATE'
   }
 },
 function(req, res) {
-  var mealTag = req.slot('MealMenu').toLowerCase();
-  var date = getDate();
+  var mealTag = req.slot('MealMenu');
+  var date = (req.slot('Date') !== null && req.slot('Date') !== undefined) ? req.slot('Date') : getDate();
   var tag;
   console.log("Meal type:", mealTag);
 
@@ -173,7 +176,7 @@ function(req, res) {
       if (results.success == 'true') {
         switch (tag) {
           case 'Breakfast':
-          res.say("For breakfest we have " + results.data[0].description).shouldEndSession(false).send();
+          res.say("For breakfast we have " + results.data[0].description).shouldEndSession(false).send();
           break;
 
           case 'Lunch':
@@ -185,11 +188,11 @@ function(req, res) {
           break;
 
           default:
-          res.say('I couldn\'t find any items on the menu.').shouldEndSession(false).send();
+          res.say('I couldn\'t find any items on the menu for ' + date).shouldEndSession(false).send();
         }
       } else {
-        console.log('I couldn\'t find any items on the menu.');
-        res.say('I couldn\'t find any items on the menu.').shouldEndSession(false).send();
+        console.log('I couldn\'t find any items on the menu for ' + date);
+        res.say('I couldn\'t find any items on the menu for ' + date).shouldEndSession(false).send();
       }
     }).catch(function(error) {
       console.log('❌ prompt during failure:', response);
@@ -204,20 +207,20 @@ function(req, res) {
 // Tag Events
 app.intent('getTagEvents', {
   'slots': {
-    "TagType": "TagTypeInfo"
+    "TagType": "TagTypeInfo",
+    'Date': 'AMAZON.DATE'
   }
 },
 function(req, res) {
   var tag = req.slot('TagType').toLowerCase();
-  var date = getDate();
+  var date = (req.slot('Date') !== null && req.slot('Date') !== undefined) ? req.slot('Date') : getDate();
   var prompt = ""
-  var tag;
   console.log("Meal type:", tag);
 
   if (tag && tag !== null && tag !== undefined) {
     console.log("Tag:", tag);
-    if(tag == "entertain"){
-      tag =  "entertainment";
+    if (tag == "entertain") {
+      tag = "entertainment";
     }
     var aa = QHubDataHelper.getUpcomingTagEvents(tag);
     return aa.then(function(results) {
@@ -234,11 +237,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + tag + " events.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + tag + " event is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no "+ tag + " event scheduled today."+" Next " + tag + " event is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + tag + " event is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no " + tag + " event scheduled today." + " Next " + tag + " event is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -246,11 +248,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + tag + " conducted.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + tag + " is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no games scheduled today."+ " Next " + tag + " is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + tag + " is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no games scheduled today." + " Next " + tag + " is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -258,11 +259,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + "concerts held.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + tag + " is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no concerts scheduled today."+ " Next " + tag + " is "+ results.data[0].title +", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + tag + " is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no concerts scheduled today." + " Next " + tag + " is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -270,11 +270,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + "movie night events.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next movie night event is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no movie night scheduled today."+ " Next movie night event is "+ results.data[0].title +", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next movie night event is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no movie night scheduled today." + " Next movie night event is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -282,38 +281,35 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + "garage sale events.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next garage sale event is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no "+ tag + " scheduled today."+ " Next garage sale event is "+ results.data[0].title +", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next garage sale event is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no " + tag + " scheduled today." + " Next garage sale event is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
           case 'housekeeping':
-          if (results.data[0].date_recurrences[0] == date){
+          if (results.data[0].date_recurrences[0] == date) {
             res.say(prompt + " Next housekeeping is scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There is no "+ tag + " scheduled today."+ " Next housekeeping is scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There is no " + tag + " scheduled today." + " Next housekeeping is scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
           case 'laundry':
-          if (results.data[0].date_recurrences[0] == date){
+          if (results.data[0].date_recurrences[0] == date) {
             res.say(prompt + " Next laundry pickup is today between " + results.data[0].start_time + " and " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no laundry pickup scheduled today."+ " Next laundry is scheduled on " + results.data[0].date_recurrences[0] + " between " + results.data[0].start_time + " and " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no laundry pickup scheduled today." + " Next laundry is scheduled on " + results.data[0].date_recurrences[0] + " between " + results.data[0].start_time + " and " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
           default:
-          res.say('I couldn\'t find any events scheduled for ' + tag +'.').shouldEndSession(false).send();
+          res.say('I couldn\'t find any events scheduled for ' + tag + '.').shouldEndSession(false).send();
         }
       } else {
-        console.log('I couldn\'t find any events scheduled for ' + tag +'.');
-        res.say('I couldn\'t find any events scheduled for ' + tag +'.').shouldEndSession(false).send();
+        console.log('I couldn\'t find any events scheduled for ' + tag + '.');
+        res.say('I couldn\'t find any events scheduled for ' + tag + '.').shouldEndSession(false).send();
       }
     }).catch(function(error) {
       console.log('❌ prompt during failure:', response);
@@ -327,12 +323,13 @@ function(req, res) {
 // event by title
 app.intent('getTitleEvents', {
   'slots': {
-    "TitleType": "TitleTypeInfo"
+    "TitleType": "TitleTypeInfo",
+    'Date': 'AMAZON.DATE'
   }
 },
 function(req, res) {
   var title = req.slot('TitleType').toLowerCase();
-  var date = getDate();
+  var date = req.slot('Date');
   var prompt = ""
   var tag;
   console.log("Meal type:", title);
@@ -352,11 +349,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + title + " classes.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + title + " class is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + " Next " + title + " class is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + title + " class is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + " Next " + title + " class is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -364,11 +360,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + title + " trips.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + title + " trip is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + "There are no field trip event scheduled today."+ " Next " + title + " trip is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + title + " trip is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + "There are no field trip event scheduled today." + " Next " + title + " trip is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -379,11 +374,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + title + " games.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + title + " game is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else{
-            res.say(prompt + " Next " + title + " game is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + title + " game is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + " Next " + title + " game is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
           break;
 
@@ -391,11 +385,10 @@ function(req, res) {
           if (results.count > 1) {
             prompt = "There are " + results.count + " " + title + " games.";
           }
-          if (results.data[0].date_recurrences[0] == date){
-            res.say(prompt + " Next " + title + " event is "+ results.data[0].title +", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
-          }
-          else {
-            res.say(prompt + " Next " + title + " event is "+ results.data[0].title +", scheduled on "+ results.data[0].date_recurrences[0] +" from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          if (results.data[0].date_recurrences[0] == date) {
+            res.say(prompt + " Next " + title + " event is " + results.data[0].title + ", scheduled today from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
+          } else {
+            res.say(prompt + " Next " + title + " event is " + results.data[0].title + ", scheduled on " + results.data[0].date_recurrences[0] + " from " + results.data[0].start_time + " to " + results.data[0].end_time + ".").shouldEndSession(false).send();
           }
         }
       } else {
@@ -410,6 +403,77 @@ function(req, res) {
   }
 }
 );
+
+// create reservation
+
+app.intent('createReservation',{
+  'slots': {
+    "Category": "CategoryType",
+    'Date': 'AMAZON.DATE',
+    'FromTime': 'AMAZON.TIME',
+    'ToTime': 'AMAZON.TIME'
+  }
+}, function(req, res) {
+  var category = req.slot('Category');
+  var date = req.slot('Date');
+  var from_time = req.slot('FromTime');
+  var to_time = req.slot('ToTime');
+  var prompt = ""
+  var slot = ""
+
+  if (category && category !== null && category !== undefined) {
+    res.session('category', req.slot('Category').toLowerCase());
+  }
+  if (date && date !== null && date !== undefined) {
+    res.session('date', req.slot('Date'));
+  }
+  if (from_time && from_time !== null && from_time !== undefined) {
+    res.session('from_time', req.slot('FromTime'));
+  }
+  if (to_time && to_time !== null && to_time !== undefined) {
+    res.session('to_time', req.slot('ToTime'));
+  }
+
+  if (req.session('category') == undefined ){
+    res.say("Now! What reservation would you like to make?").reprompt("Please mention the reservation details.").shouldEndSession(false).send();
+  } else if(req.session('date') == undefined){
+    res.say("When would you like to make the reservation for "+ req.session('category') +"?").reprompt("Please mention the date for reservation.").shouldEndSession(false).send();
+  } else if(req.session('from_time') == undefined || req.session('to_time') == undefined){
+    res.say("At what time slot would you like to make the reservation for "+ req.session('category') +" on "+req.session('date')+ "?").reprompt("Please mention the timings for reservation.").shouldEndSession(false).send();
+  } else {
+    var aa = QHubDataHelper.createReservation(req.session('category'), req.session('date'), req.session('from_time'), req.session('to_time'));
+    return aa.then(function(results) {
+      if(results.success == true){
+        prompt = "Alright! I have reserved "+ req.session('category') +" on "+req.session('date')+ " from "+req.session('from_time')+ " to "+req.session('to_time');
+        console.log("prompt:", prompt);
+        res.say(prompt).reprompt("What else can I help you with?").shouldEndSession(false).send();
+      } else if(results.message == "Slots available"){
+        prompt = "There are "+ results.data.slot_length + " slots available for regitration. ";
+        for (var i = 0; i < results.data.slot_length; i++) {
+          if(i == results.data.slot_length - 1){
+            slot = slot + " and "
+          } 
+          slot = slot + getDateMeridian(results.data.available_slots[i][0]) + " to " + getDateMeridian(results.data.available_slots[i][1]);
+          if(i == results.data.slot_length - 1){
+            slot = slot + "."
+          } else if(i != results.data.slot_length - 2)  {
+            slot = slot + ", "
+          }
+        }
+        res.say(prompt + slot + " Please select a convenient timing for reservation.").shouldEndSession(false).send();
+        res.clearSession('from_time');
+        res.clearSession('to_time');
+      } else {
+        res.say("Sorry! there are no slots available for "+req.session('date')+ " Please select a different date.").shouldEndSession(false).send();
+        res.clearSession('date');
+      }
+    }).catch(function(error) {
+      console.log('❌ prompt during failure:', response);
+      response = "Oops! There seems to be an error. Please try again."
+      res.say(response).shouldEndSession(false).send();
+    });
+  }
+});
 
 // AMAZON YES Intent
 app.intent('AMAZON.YesIntent',
@@ -489,6 +553,20 @@ function getDate() {
   }
   var today = yyyy + '-' + mm + '-' + dd;
   return today;
+}
+
+function getDateMeridian(time) {
+  var hh = time.split(":", 2)[0]
+  var mm = time.split(":", 2)[1]
+  var dd = "AM"
+  if(hh >= 12) {
+    hh = hh - 12;
+    dd = "PM";
+  }
+  if (hh == 0) {
+    hh = 12;
+  }
+  return hh + ":" + mm + " "+ dd 
 }
 
 module.exports = app;
