@@ -476,7 +476,8 @@ app.intent('createReservation',{
   } else {
     var aa = QHubDataHelper.createReservation(req.session('category'), req.session('date'), req.session('from_time'), req.session('to_time'));
     return aa.then(function(results) {
-      if(results.success == true){
+      console.log("results:", results);
+      if(results.success == true && results.message == "Successfully Reserved an Event"){
         prompt = "Alright! I have booked "+ req.session('category') +" on "+req.session('date')+ " from "+getDateMeridian(req.session('from_time')) + " to "+getDateMeridian(req.session('to_time'));
         console.log("prompt:", prompt);
         res.say(prompt).reprompt("What else can I help you with?").shouldEndSession(false).send();
@@ -516,6 +517,18 @@ app.intent('createReservation',{
         }
         res.say(prompt + slot + " Please select a convenient timing for reservation.").shouldEndSession(false).send();
         res.clearSession('from_time'); res.clearSession('to_time');
+      } else if (results.message == "available categories") {
+        var available_cat_length = results.data.categories.length;
+        prompt = "Okey! there are " + available_cat_length + " " + req.session("category") + " available. "
+        for(var c= 0; c < available_cat_length - 1; c++){
+          prompt = prompt + results.data.categories[c] + ", "
+        }
+        prompt = prompt + " and " + results.data.categories[available_cat_length - 1] + ". Which "+req.session("category")+ " would you like to book?"
+        res.say(prompt).shouldEndSession(false).send();
+        res.clearSession("category");
+      } else if (results.message == "Invalid category") {
+        res.say("The requested category " + req.session('category') + " does not exit. Please provide a valid reservation category");
+        res.clearSession('date'); res.clearSession('intentName'); res.clearSession('category'); res.clearSession('from_time'); res.clearSession('to_time');
       } else if(results.message == "Reservation slots have to be between 6:00 AM and 9:00 PM") {
         res.say("Reservation slots have to be between 6:00 AM and 9:00 PM").reprompt("Please mention the timings for reservation.").shouldEndSession(false).send();
         res.clearSession('from_time'); res.clearSession('to_time');
